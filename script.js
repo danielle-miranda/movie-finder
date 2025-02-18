@@ -1,3 +1,13 @@
+const checkStatus = (response) => {
+  if (response.ok) {
+    // .ok returns true if response status is 200-299
+    return response;
+  }
+  throw new Error('Request was either a 404 or 500');
+}
+
+const json = (response) => response.json()
+
 const Movie = (props) => {
   const { Title, Year, imdbID, Type, Poster } = props.movie;  // ES6 destructuring
 
@@ -18,7 +28,6 @@ const Movie = (props) => {
   )
 }
 
-
 class MovieFinder extends React.Component {
   constructor(props) {
     super(props);
@@ -38,31 +47,28 @@ class MovieFinder extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault();
-    let { searchTerm } = this.state;  // ES6 destructuring
-    searchTerm = searchTerm.trim();  // clean the string
-    if (!searchTerm) {  // make sure the value isn't an empty string
-      return;  // early return
+    let { searchTerm } = this.state;
+    searchTerm = searchTerm.trim();
+    if (!searchTerm) {
+      return;
     }
-  
-    // make the AJAX request to OMDBAPI to get a list of results
-    fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=b7da8d63`).then((response) => {
-      if (response.ok) {
-        // .ok returns true if response status is 200-299
-        return response.json();
-      }
-      throw new Error('Request was either a 404 or 500');
-    }).then((data) => {
-      if (data.Response === 'False') {
-        throw new Error(data.Error);
-      }
-    
-      if (data.Response === 'True' && data.Search) {
-        this.setState({ results: data.Search, error: '' });
-      }
-    }).catch((error) => {
-      this.setState({ error: error.message });
-      console.log(error);
-    })
+
+    fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=b7da8d63`)
+      .then(checkStatus)
+      .then(json)
+      .then((data) => {
+        if (data.Response === 'False') {
+          throw new Error(data.Error);
+        }
+
+        if (data.Response === 'True' && data.Search) {
+          this.setState({ results: data.Search, error: '' });
+        }
+      })
+      .catch((error) => {
+        this.setState({ error: error.message });
+        console.log(error);
+      })
   }
 
   render() {
